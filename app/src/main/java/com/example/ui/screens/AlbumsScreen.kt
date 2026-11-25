@@ -62,7 +62,8 @@ fun AlbumsScreen(
     isSelectionMode: Boolean,
     selectedIds: Set<Long>,
     onToggleSelection: (Long) -> Unit,
-    onToggleFavorite: (MediaItem) -> Unit
+    onToggleFavorite: (MediaItem) -> Unit,
+    showBadges: Boolean = true
 ) {
     if (selectedAlbumName != null) {
         // Album Detail View
@@ -152,7 +153,8 @@ fun AlbumsScreen(
                                 }
                             },
                             onItemLongClick = { onToggleSelection(item.id) },
-                            onToggleFavorite = { onToggleFavorite(item) }
+                            onToggleFavorite = { onToggleFavorite(item) },
+                            showBadges = showBadges
                         )
                     }
                 }

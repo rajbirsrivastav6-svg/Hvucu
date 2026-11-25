@@ -31,7 +31,8 @@ fun FavoritesScreen(
     selectedIds: Set<Long>,
     onToggleSelection: (Long) -> Unit,
     onPhotoClick: (MediaItem) -> Unit,
-    onToggleFavorite: (MediaItem) -> Unit
+    onToggleFavorite: (MediaItem) -> Unit,
+    showBadges: Boolean = true
 ) {
     if (favorites.isEmpty()) {
         Box(
@@ -81,7 +82,8 @@ fun FavoritesScreen(
                         }
                     },
                     onItemLongClick = { onToggleSelection(item.id) },
-                    onToggleFavorite = { onToggleFavorite(item) }
+                    onToggleFavorite = { onToggleFavorite(item) },
+                    showBadges = showBadges
                 )
             }
         }

@@ -78,6 +78,8 @@ import java.util.Locale
 fun MediaDetailScreen(
     mediaList: List<MediaItem>,
     initialIndex: Int,
+    initialSlideshowSpeedSeconds: Int = 3,
+    confirmBeforeDelete: Boolean = true,
     onClose: () -> Unit,
     onToggleFavorite: (MediaItem) -> Unit,
     onMoveToTrash: (MediaItem) -> Unit,
@@ -95,7 +97,9 @@ fun MediaDetailScreen(
 
     var showControls by remember { mutableStateOf(true) }
     var isSlideshowPlaying by remember { mutableStateOf(false) }
-    var slideshowSpeedSeconds by remember { mutableIntStateOf(3) }
+    var slideshowSpeedSeconds by remember(initialSlideshowSpeedSeconds) {
+        mutableIntStateOf(initialSlideshowSpeedSeconds)
+    }
     var showExifSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
@@ -373,7 +377,15 @@ fun MediaDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.clip(RoundedCornerShape(8.dp)).padding(4.dp)
                     ) {
-                        IconButton(onClick = { showDeleteConfirmDialog = true }) {
+                        IconButton(
+                            onClick = {
+                                if (confirmBeforeDelete) {
+                                    showDeleteConfirmDialog = true
+                                } else {
+                                    onMoveToTrash(currentItem)
+                                }
+                            }
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Delete",

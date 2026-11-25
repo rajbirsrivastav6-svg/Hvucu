@@ -8,12 +8,14 @@ import com.example.data.local.GalleryDatabase
 import com.example.data.model.Album
 import com.example.data.model.FilterPreset
 import com.example.data.model.MediaItem
+import com.example.data.preferences.GalleryPreferences
+import com.example.data.preferences.GallerySettings
+import com.example.data.preferences.ThemeMode
 import com.example.data.repository.GalleryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -47,15 +49,20 @@ data class GalleryUiState(
     val showExifInfoSheet: Boolean = false,
     val showCreateAlbumDialog: Boolean = false,
     val showAddToAlbumDialog: Boolean = false,
+    val isViewingSettings: Boolean = false,
     val userFeedbackMessage: String? = null
 )
 
 class GalleryViewModel(application: Application) : AndroidViewModel(application) {
     private val database = GalleryDatabase.getDatabase(application)
     private val repository = GalleryRepository(application, database.mediaDao(), database.albumDao())
+    private val preferences = GalleryPreferences(application)
 
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState.asStateFlow()
+
+    val settings: StateFlow<GallerySettings> = preferences.settingsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), GallerySettings())
 
     val activeMedia: StateFlow<List<MediaItem>> = repository.activeMedia
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -74,6 +81,14 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             repository.initializeDefaultDataIfNeeded()
             repository.syncDeviceMedia()
         }
+        viewModelScope.launch {
+            preferences.settingsFlow.collect { saved ->
+                _uiState.value = _uiState.value.copy(
+                    gridColumns = saved.defaultGridColumns,
+                    timelineGrouping = saved.defaultTimelineGrouping
+                )
+            }
+        }
     }
 
     fun setNavTab(tab: GalleryNavTab) {
@@ -87,6 +102,9 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
 
     fun setTimelineGrouping(grouping: TimelineGrouping) {
         _uiState.value = _uiState.value.copy(timelineGrouping = grouping)
+        viewModelScope.launch {
+            preferences.setDefaultTimelineGrouping(grouping)
+        }
     }
 
     fun toggleGridColumns() {
@@ -95,7 +113,66 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             3 -> 4
             else -> 2
         }
-        _uiState.value = _uiState.value.copy(gridColumns = next)
+        setGridColumns(next)
+    }
+
+    fun setGridColumns(columns: Int) {
+        val clamped = columns.coerceIn(2, 4)
+        _uiState.value = _uiState.value.copy(gridColumns = clamped)
+        viewModelScope.launch {
+            preferences.setDefaultGridColumns(clamped)
+        }
+    }
+
+    fun openSettings() {
+        _uiState.value = _uiState.value.copy(isViewingSettings = true)
+    }
+
+    fun closeSettings() {
+        _uiState.value = _uiState.value.copy(isViewingSettings = false)
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch {
+            preferences.setThemeMode(mode)
+        }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch {
+            preferences.setDynamicColor(enabled)
+        }
+    }
+
+    fun setShowHighlights(show: Boolean) {
+        viewModelScope.launch {
+            preferences.setShowHighlights(show)
+        }
+    }
+
+    fun setShowThumbnailBadges(show: Boolean) {
+        viewModelScope.launch {
+            preferences.setShowThumbnailBadges(show)
+        }
+    }
+
+    fun setSlideshowSpeedSeconds(seconds: Int) {
+        viewModelScope.launch {
+            preferences.setSlideshowSpeedSeconds(seconds)
+        }
+    }
+
+    fun setConfirmBeforeDelete(confirm: Boolean) {
+        viewModelScope.launch {
+            preferences.setConfirmBeforeDelete(confirm)
+        }
+    }
+
+    fun syncDeviceMediaNow() {
+        viewModelScope.launch {
+            repository.syncDeviceMedia()
+            showMessage("Device photos synced")
+        }
     }
 
     fun setSearchQuery(query: String) {

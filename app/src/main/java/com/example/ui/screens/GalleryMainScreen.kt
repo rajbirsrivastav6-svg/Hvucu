@@ -56,6 +56,7 @@ import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewModule
@@ -122,6 +123,7 @@ import java.util.Locale
 fun GalleryMainScreen(viewModel: GalleryViewModel) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
     val activeMedia by viewModel.activeMedia.collectAsStateWithLifecycle()
     val favoriteMedia by viewModel.favoriteMedia.collectAsStateWithLifecycle()
     val trashMedia by viewModel.trashMedia.collectAsStateWithLifecycle()
@@ -193,7 +195,11 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            if (!uiState.isViewingSettings) {
+                SnackbarHost(snackbarHostState)
+            }
+        },
         topBar = {
             if (uiState.isSelectionMode) {
                 // Batch Selection Top Bar
@@ -322,6 +328,18 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
                                 )
                             }
                         }
+
+                        if (!isSearchActive) {
+                            IconButton(
+                                onClick = { viewModel.openSettings() },
+                                modifier = Modifier.testTag("settings_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = "Settings"
+                                )
+                            }
+                        }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
@@ -415,8 +433,8 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
             when (uiState.navTab) {
                 GalleryNavTab.PHOTOS -> {
                     Column(modifier = Modifier.fillMaxSize()) {
-                        // Highlights & Memories Carousel (shown if not searching)
-                        if (uiState.searchQuery.isBlank() && activeMedia.isNotEmpty()) {
+                        // Highlights & Memories Carousel (shown if enabled and not searching)
+                        if (settings.showHighlights && uiState.searchQuery.isBlank() && activeMedia.isNotEmpty()) {
                             MemoriesHighlightsCarousel(
                                 mediaList = activeMedia,
                                 onPhotoClick = { item ->
@@ -534,7 +552,8 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
                                             }
                                         },
                                         onItemLongClick = { viewModel.toggleItemSelection(item.id) },
-                                        onToggleFavorite = { viewModel.toggleFavorite(item) }
+                                        onToggleFavorite = { viewModel.toggleFavorite(item) },
+                                        showBadges = settings.showThumbnailBadges
                                     )
                                 }
                             }
@@ -588,7 +607,8 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
                                                                     }
                                                                 },
                                                                 onItemLongClick = { viewModel.toggleItemSelection(item.id) },
-                                                                onToggleFavorite = { viewModel.toggleFavorite(item) }
+                                                                onToggleFavorite = { viewModel.toggleFavorite(item) },
+                                                                showBadges = settings.showThumbnailBadges
                                                             )
                                                         }
                                                     }
@@ -623,7 +643,8 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
                         isSelectionMode = uiState.isSelectionMode,
                         selectedIds = uiState.selectedMediaIds,
                         onToggleSelection = { viewModel.toggleItemSelection(it) },
-                        onToggleFavorite = { viewModel.toggleFavorite(it) }
+                        onToggleFavorite = { viewModel.toggleFavorite(it) },
+                        showBadges = settings.showThumbnailBadges
                     )
                 }
 
@@ -637,7 +658,8 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
                             val index = favoriteMedia.indexOfFirst { it.id == item.id }
                             if (index >= 0) viewModel.openMediaDetail(index)
                         },
-                        onToggleFavorite = { viewModel.toggleFavorite(it) }
+                        onToggleFavorite = { viewModel.toggleFavorite(it) },
+                        showBadges = settings.showThumbnailBadges
                     )
                 }
 
@@ -671,6 +693,8 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
         MediaDetailScreen(
             mediaList = currentList,
             initialIndex = uiState.viewingMediaIndex,
+            initialSlideshowSpeedSeconds = settings.slideshowSpeedSeconds,
+            confirmBeforeDelete = settings.confirmBeforeDelete,
             onClose = { viewModel.closeMediaDetail() },
             onToggleFavorite = { viewModel.toggleFavorite(it) },
             onMoveToTrash = { viewModel.moveToTrash(it) },
@@ -678,6 +702,29 @@ fun GalleryMainScreen(viewModel: GalleryViewModel) {
             onSaveDetails = { item, caption, tags ->
                 viewModel.updateMediaMetadata(item, caption, tags)
             }
+        )
+    }
+
+    // Settings Screen Overlay
+    if (uiState.isViewingSettings) {
+        SettingsScreen(
+            settings = settings,
+            totalPhotosCount = activeMedia.size,
+            albumsCount = albums.size,
+            favoritesCount = favoriteMedia.size,
+            trashCount = trashMedia.size,
+            snackbarHostState = snackbarHostState,
+            onClose = { viewModel.closeSettings() },
+            onThemeModeChange = { viewModel.setThemeMode(it) },
+            onDynamicColorChange = { viewModel.setDynamicColor(it) },
+            onGridColumnsChange = { viewModel.setGridColumns(it) },
+            onTimelineGroupingChange = { viewModel.setTimelineGrouping(it) },
+            onShowHighlightsChange = { viewModel.setShowHighlights(it) },
+            onShowThumbnailBadgesChange = { viewModel.setShowThumbnailBadges(it) },
+            onSlideshowSpeedChange = { viewModel.setSlideshowSpeedSeconds(it) },
+            onConfirmBeforeDeleteChange = { viewModel.setConfirmBeforeDelete(it) },
+            onSyncDeviceMedia = { viewModel.syncDeviceMediaNow() },
+            onEmptyTrash = { viewModel.emptyTrash() }
         )
     }
 

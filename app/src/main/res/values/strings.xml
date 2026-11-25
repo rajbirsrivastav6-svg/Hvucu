@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Gallery</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_appearance">Appearance &amp; Layout</string>
+    <string name="settings_section_viewer">Viewer &amp; Slideshow</string>
+    <string name="settings_section_library">Library &amp; Storage</string>
+    <string name="settings_section_about">About Gallery</string>
 </resources>

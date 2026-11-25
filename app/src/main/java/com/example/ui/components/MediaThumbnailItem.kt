@@ -45,7 +45,8 @@ fun MediaThumbnailItem(
     onItemClick: () -> Unit,
     onItemLongClick: () -> Unit,
     onToggleFavorite: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showBadges: Boolean = true
 ) {
     val shape = RoundedCornerShape(10.dp)
 
@@ -123,50 +124,52 @@ fun MediaThumbnailItem(
         }
 
         // Bottom icons (Favorite & Filter indicators)
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(6.dp)
-        ) {
-            AnimatedVisibility(
-                visible = item.isFavorite,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
+        if (showBadges) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(6.dp)
             ) {
+                AnimatedVisibility(
+                    visible = item.isFavorite,
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.55f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Favorite",
+                            tint = Color(0xFFFF5252),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+
+            // Filter applied badge
+            if (item.filterType != "Normal" || item.rotationAngle != 0f) {
                 Box(
                     modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(6.dp)
                         .size(22.dp)
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.55f)),
+                        .background(Color.Black.copy(alpha = 0.6f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = "Favorite",
-                        tint = Color(0xFFFF5252),
-                        modifier = Modifier.size(14.dp)
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = "Edited",
+                        tint = Color(0xFFFFD54F),
+                        modifier = Modifier.size(13.dp)
                     )
                 }
-            }
-        }
-
-        // Filter applied badge
-        if (item.filterType != "Normal" || item.rotationAngle != 0f) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(6.dp)
-                    .size(22.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.6f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = "Edited",
-                    tint = Color(0xFFFFD54F),
-                    modifier = Modifier.size(13.dp)
-                )
             }
         }
     }
