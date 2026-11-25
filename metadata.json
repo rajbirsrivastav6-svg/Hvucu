@@ -1,0 +1,6 @@
+{
+  "name": "Gallery",
+  "description": "A modern, high-performance photo and video gallery app with rich album management, photo editing, timeline grid, and favorites.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
